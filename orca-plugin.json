@@ -1,0 +1,47 @@
+{
+  "manifestVersion": 2,
+  "id": "catppuccin-exact",
+  "name": "Catppuccin Exact for Orca",
+  "version": "1.0.0",
+  "execution": "data",
+  "description": "Catppuccin for Orca: #1e1e2e canvas, #181825 panels and composer, without Orca's extra surface tint.",
+  "license": "MIT",
+  "engines": {
+    "orca": ">=1.4.246"
+  },
+  "icon": "assets/icon.png",
+  "cover": {
+    "path": "assets/cover.png",
+    "alt": "Orca with Catppuccin Exact: project sidebar, syntax-highlighted editor, terminal and the agent chat on the #1e1e2e canvas"
+  },
+  "screenshots": [
+    {
+      "path": "assets/screenshot-dark.png",
+      "alt": "Orca with the dark Catppuccin Exact theme: worktree sidebar, chat transcript, diff and composer",
+      "caption": "Catppuccin Exact — #1e1e2e canvas, #181825 panels",
+      "theme": "dark"
+    },
+    {
+      "path": "assets/screenshot-light.png",
+      "alt": "Orca with the light Catppuccin Latte Exact theme: worktree sidebar, chat transcript, diff and composer",
+      "caption": "Catppuccin Latte Exact — the light pair",
+      "theme": "light"
+    }
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "id": "catppuccin-exact-dark",
+        "title": "Catppuccin Exact",
+        "path": "themes/catppuccin-exact-dark.json"
+      },
+      {
+        "id": "catppuccin-exact-light",
+        "title": "Catppuccin Latte Exact",
+        "path": "themes/catppuccin-exact-light.json"
+      }
+    ]
+  },
+  "capabilities": [],
+  "repository": "https://github.com/esykai/orca-catppuccin-exact"
+}
