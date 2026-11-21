@@ -4,7 +4,8 @@
 Orca's native chat derives a few internal surfaces with color-mix(). A plugin
 theme cannot override those variables, so this optional local patch pins them
 to the theme tokens. It performs equal-length byte replacements to keep the
-asar metadata valid.
+asar metadata valid and finds Orca's hashed CSS filenames at runtime, so it
+keeps working when an Orca update renames them.
 
 Run with Orca closed if possible, then reload/restart Orca.
 """
@@ -31,11 +32,17 @@ CLIENT_REPLACEMENTS = [
     (b"--chat-composer-base:transparent", b"--chat-composer-base:var(--card)"),
 ]
 
-APP_TARGET = (
+# Orca 1.4.268 moved the composer mix behind --chat-composer-base; older
+# releases mixed directly into --chat-canvas. Support both shapes.
+APP_TARGETS = [
     b"--chat-composer-surface:color-mix(in srgb, var(--chat-source-foreground) "
-    b"var(--chat-composer-mix), var(--chat-canvas))"
-)
+    b"var(--chat-composer-mix), var(--chat-canvas))",
+    b"--chat-composer-surface:color-mix(in srgb, var(--chat-source-foreground) "
+    b"var(--chat-composer-mix), var(--chat-composer-base))",
+]
 APP_REPLACEMENT = b"--chat-composer-surface:var(--card)"
+
+BACKUP_SUFFIX = ".catppuccin-exact.bak"
 
 
 def find_assets(explicit: str | None) -> Path:
@@ -50,6 +57,27 @@ def find_assets(explicit: str | None) -> Path:
     raise SystemExit(
         "Could not find Orca's app.asar.unpacked assets. Pass --assets <dir>."
     )
+
+
+def find_css(assets: Path, pattern: str, needles, label: str) -> Path:
+    matches = [
+        path
+        for path in sorted(assets.glob(pattern))
+        if any(needle in path.read_bytes() for needle in needles)
+    ]
+    if len(matches) > 1:
+        names = ", ".join(path.name for path in matches)
+        raise SystemExit(f"{label}: ambiguous CSS files: {names}")
+    if not matches:
+        raise SystemExit(f"{label}: no {pattern} with the expected chat rules")
+    return matches[0]
+
+
+def backup(path: Path) -> None:
+    target = path.with_suffix(path.suffix + BACKUP_SUFFIX)
+    if not target.exists():
+        shutil.copy2(path, target)
+        print(f"{path.name}: backup {target.name}")
 
 
 def patch_bytes(path: Path, replacements, label: str) -> bool:
@@ -67,10 +95,7 @@ def patch_bytes(path: Path, replacements, label: str) -> bool:
         return False
     if len(data) != original_size:
         raise SystemExit(f"{label}: size changed, refusing to write")
-    backup = path.with_suffix(path.suffix + ".catppuccin-exact.bak")
-    if not backup.exists():
-        shutil.copy2(path, backup)
-        print(f"{label}: backup {backup.name}")
+    backup(path)
     path.write_bytes(data)
     print(f"{label}: patched ({original_size} bytes)")
     return True
@@ -78,32 +103,37 @@ def patch_bytes(path: Path, replacements, label: str) -> bool:
 
 def patch_app_css(path: Path) -> bool:
     data = path.read_bytes()
-    if APP_TARGET not in data:
-        print(f"{path.name}: composer target not found (Orca version changed?)")
+    changed = False
+    for target in APP_TARGETS:
+        if target not in data:
+            continue
+        padded = APP_REPLACEMENT + b" " * (len(target) - len(APP_REPLACEMENT))
+        data = data.replace(target, padded)
+        changed = True
+    if not changed:
+        if APP_REPLACEMENT in data:
+            print(f"{path.name}: already patched")
+        else:
+            print(f"{path.name}: composer target not found (Orca version changed?)")
         return False
-    padded = APP_REPLACEMENT + b" " * (len(APP_TARGET) - len(APP_REPLACEMENT))
-    data = data.replace(APP_TARGET, padded)
     original_size = path.stat().st_size
     if len(data) != original_size:
         raise SystemExit(f"{path.name}: size changed, refusing to write")
-    backup = path.with_suffix(path.suffix + ".catppuccin-exact.bak")
-    if not backup.exists():
-        shutil.copy2(path, backup)
-        print(f"{path.name}: backup {backup.name}")
+    backup(path)
     path.write_bytes(data)
     print(f"{path.name}: patched ({original_size} bytes)")
     return True
 
 
 def restore(assets: Path) -> None:
-    for name in ("App-DDdspUUq.css", "client-BjztnwFA.css"):
-        path = assets / name
-        backup = path.with_suffix(path.suffix + ".catppuccin-exact.bak")
-        if backup.exists():
-            shutil.copy2(backup, path)
-            print(f"{name}: restored from {backup.name}")
-        else:
-            print(f"{name}: no backup found")
+    backups = sorted(assets.glob(f"*{BACKUP_SUFFIX}"))
+    if not backups:
+        print(f"{assets}: no backups found")
+        return
+    for backup_path in backups:
+        path = backup_path.with_name(backup_path.name[: -len(BACKUP_SUFFIX)])
+        shutil.copy2(backup_path, path)
+        print(f"{path.name}: restored from {backup_path.name}")
 
 
 def main() -> int:
@@ -116,17 +146,25 @@ def main() -> int:
     print(f"Orca assets: {assets}")
     if args.restore:
         restore(assets)
-        print("Reload Orca to apply.")
+        print("Restart Orca to apply.")
         return 0
 
-    client = assets / "client-BjztnwFA.css"
-    app = assets / "App-DDdspUUq.css"
-    if not client.is_file() or not app.is_file():
-        raise SystemExit("Expected Orca CSS files are missing in that folder.")
+    client = find_css(
+        assets,
+        "client-*.css",
+        (b"--chat-canvas-mix:5%", b"--chat-canvas-mix:0%"),
+        "client CSS",
+    )
+    app = find_css(
+        assets,
+        "App-*.css",
+        (b"--chat-composer-surface:color-mix", b"--chat-composer-surface:var(--card)"),
+        "app CSS",
+    )
 
     patch_bytes(client, CLIENT_REPLACEMENTS, client.name)
     patch_app_css(app)
-    print("Done. Reload Orca (Ctrl+R / Cmd+R). Orca updates overwrite this patch.")
+    print("Done. Restart Orca (quit and reopen); a renderer reload may not reread it.")
     return 0
 
 

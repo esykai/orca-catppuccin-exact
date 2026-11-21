@@ -38,8 +38,8 @@ no permissions.
 
 - **Two themes** — a dark Mocha flavour and a light Latte flavour, both selectable in
   **Settings → Appearance**.
-- **Every public token** — 66 / 66 Orca app-theme variables defined, nothing derived
-  and nothing left to guesswork.
+- **Every public token** — 74 / 74 Orca app-theme variables, including the newer
+  chat and editor-selection tokens, nothing derived and nothing left to guesswork.
 - **Real code colors** — 28 grouped `tokenColors` rules covering the 179 upstream
   Catppuccin rules, so the editor and diffs match the palette.
 - **Exact surfaces** — an optional patch removes the two internal `color-mix()` calls
@@ -55,9 +55,12 @@ surfaces from it:
 --chat-composer-surface: color-mix(in srgb, var(--foreground) 4%, var(--chat-canvas));
 ```
 
-With a `#1e1e2e` background that becomes a `#272738` canvas and a `#252636` composer.
-A color theme cannot override those internal variables from the plugin API, so this
-repository ships a small, reversible CSS patch for anyone who wants the last 4–5 %.
+Orca `1.4.268` moved the percentages behind `--chat-canvas-mix` and
+`--chat-composer-mix`, so the values are equivalent but the old hard-coded patch no
+longer matched. With a `#1e1e2e` background the defaults become a `#272738` canvas
+and a `#252636` composer. A color theme cannot override those internal variables
+from the plugin API, so this repository ships a small, reversible CSS patch for
+anyone who wants the last 4–5 %.
 
 | Surface | Orca default with this palette | Catppuccin Exact |
 | --- | --- | --- |
@@ -115,16 +118,18 @@ apply the local patch:
 python tools/patch-orca-chat-css.py
 ```
 
-It finds `app.asar.unpacked/out/renderer/assets`, backs the two CSS files up as
-`*.catppuccin-exact.bak`, and makes **equal-length byte replacements** so the asar metadata
-stays valid:
+It finds `app.asar.unpacked/out/renderer/assets`, locates the current hashed
+`client-*.css` and `App-*.css` files by content, backs each one up as
+`*.catppuccin-exact.bak`, and makes **equal-length byte replacements** so the asar
+metadata stays valid:
 
 - `--chat-canvas-mix: 0%`
 - `--chat-composer-mix: 0%`
 - `--chat-composer-base: var(--card)`
 - `--chat-composer-surface: var(--card)`
 
-Reload Orca (`Ctrl+R` / `Cmd+R`) to see the change. Undo at any time:
+Restart Orca (quit and reopen) to see the change; the running process keeps the
+old unpacked CSS cached, so a renderer reload may show no difference. Undo at any time:
 
 ```sh
 python tools/patch-orca-chat-css.py --restore
@@ -170,7 +175,7 @@ orca plugin inspect .
 
 | Check | Result |
 | --- | --- |
-| Public Orca app-theme tokens | `66 / 66`, no unknown tokens |
+| Public Orca app-theme tokens | `74 / 74`, no unknown tokens |
 | `tokenColors` rules | 28 groups covering 179 upstream Catppuccin rules |
 | Empty rules, invalid colors, duplicate ids | none |
 | Manifest | format 2, `execution: data`, `engines.orca: >=1.4.246` |

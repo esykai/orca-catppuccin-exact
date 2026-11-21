@@ -94,7 +94,7 @@ def app_html(flavor: str) -> str:
         [("punct", "  muted: "), ("str", "'#a6adc8'"), ("punct", ",")],
         [("punct", "  border: "), ("str", "'#7f849c19'"), ("punct", ",")],
         [("punct", "  accent: "), ("str", "'#cba6f7'"), ("punct", ",")],
-        [("punct", "  tokens: "), ("num", "66"), ("punct", ", rules: "), ("num", "28"), ("punct", ",")],
+        [("punct", "  tokens: "), ("num", "74"), ("punct", ", rules: "), ("num", "28"), ("punct", ",")],
         [("punct", "})")],
         [],
         [("comment", "// 4 flavors upstream, 2 surfaces here, zero tint.")],
@@ -309,7 +309,7 @@ body{{{v};background:var(--background);color:var(--foreground);
      <div class="dl add"><span class="g">+</span>   "--chat-canvas": "#1e1e2e",</div>
      <div class="dl add"><span class="g">+</span>   "--chat-composer": "#181825",</div>
      <div class="dl"><span class="p"> </span>   "--background": "#1e1e2e"</div></div>
-    <div class="after"><span class="ok">✓</span> 66 / 66 tokens · 0 unknown · no empty rules</div>
+    <div class="after"><span class="ok">✓</span> 74 / 74 tokens · 0 unknown · no empty rules</div>
    </div>
    <div class="msg user">And the light pair?<div class="meta">You · 14:04</div></div>
    <div class="msg agent"><div class="who"><span class="paw">✾</span> Orca <small>agent · 14:04</small></div>
@@ -366,7 +366,7 @@ p{{margin:{20 if social else 34}px 0 0;font-size:{sub}px;line-height:1.55;color:
 <div class="sub">for Orca</div>
 <p>The Catppuccin palette, with Orca's extra surface tint removed. One canvas, one composer.</p>
 <div class="dots">{''.join(f'<i style="background:{p[c]}"></i>' for c in ['rosewater','flamingo','pink','mauve','red','maroon','peach','yellow'])}</div>
-<div class="chips"><span>Dark + Light</span><span>66 tokens</span><span>data · no code</span><span>MIT</span></div>
+<div class="chips"><span>Dark + Light</span><span>74 tokens</span><span>data · no code</span><span>MIT</span></div>
 </div>
 <div class="shot"><img src="data:image/png;base64,{shot}"></div>
 </body></html>"""
